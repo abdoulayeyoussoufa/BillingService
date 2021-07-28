@@ -3,11 +3,13 @@ package com.techcoffee.techcoffeebillingservice.servicesImp;
 import com.techcoffee.techcoffeebillingservice.dto.InvoiceRequestDto;
 import com.techcoffee.techcoffeebillingservice.dto.InvoiceResponseDto;
 import com.techcoffee.techcoffeebillingservice.entities.Invoice;
+import com.techcoffee.techcoffeebillingservice.exceptions.CustomNotFoundException;
 import com.techcoffee.techcoffeebillingservice.mappers.InvoiceMapper;
 import com.techcoffee.techcoffeebillingservice.modeles.Customer;
 import com.techcoffee.techcoffeebillingservice.openFeign.CustmerRestClient;
 import com.techcoffee.techcoffeebillingservice.repositories.InvoiceRepository;
 import com.techcoffee.techcoffeebillingservice.services.InvoiceService;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,14 +35,22 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     public InvoiceResponseDto save(InvoiceRequestDto invoiceRequestDto) {
+        Customer customer = null;
+        /*
+        V2rifier l'ntegrite referentiel Invoice/ Customer before save it
+         */
+        try {
+            customer = custmerRestClient.getCustmoer(invoiceRequestDto.getCustomerId());
+        }catch (Exception e){
+            throw new CustomNotFoundException("Customer not found");
+        }
 
         Invoice invoice = invoiceMapper.fromInvoiceRequestDto(invoiceRequestDto);
         invoice.setId(UUID.randomUUID().toString());
         invoice.setDate(new Date());
-        /*
-        V2rifier l'ntegrite referentiel Invoice/ Customer before save it
-         */
+
         Invoice savedInvoice = invoiceRepository.save(invoice);
+        savedInvoice.setCustomer(customer);
         return invoiceMapper.fromInvoice(savedInvoice);
     }
 
@@ -59,5 +69,17 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceList.
                 stream()
                 .map(invoice -> invoiceMapper.fromInvoice(invoice)).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<InvoiceResponseDto> findAllInvoices() {
+        List<Invoice> invoices = invoiceRepository.findAll();
+              for (Invoice invoic : invoices){
+                  Customer customer = custmerRestClient.getCustmoer(invoic.getCustomerId());
+                   invoic.setCustomer(customer);
+              }
+        return invoices.stream().map(invoice->
+            invoiceMapper.fromInvoice(invoice)
+        ).collect(Collectors.toList());
     }
 }

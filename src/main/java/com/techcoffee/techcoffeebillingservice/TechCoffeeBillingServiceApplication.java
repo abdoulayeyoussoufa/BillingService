@@ -24,11 +24,11 @@ public class TechCoffeeBillingServiceApplication {
 
         return args -> {
           invoiceService.save(new InvoiceRequestDto(BigDecimal.
-                  valueOf(789222),"C01"));
+                  valueOf(789222),"Co1"));
             invoiceService.save(new InvoiceRequestDto(BigDecimal.
-                    valueOf(989000),"C01"));
+                    valueOf(989000),"Co1"));
             invoiceService.save(new InvoiceRequestDto(BigDecimal.
-                    valueOf(650000),"C02"));
+                    valueOf(650000),"Co2"));
         };
 }
 }
